@@ -31,7 +31,7 @@ def create_new_token():
         else:
             logging.error(f"Ошибка получения iam_token. Статус-код: {response.status_code}")
     except Exception as e:
-        logging.error(f"Ошибка получения iam_token: {e}")
+        logging.error(f"Ошибка получения iam_token: {e} ")
 
 
 # чтение iam_token и folder_id из файла

@@ -2,7 +2,7 @@ import telebot
 import config
 from ya_gpt import ask_gpt
 from database import *
-from vallidators import *
+from validators import *
 from SpeechKit import *
 import logging
 from creds import get_bot_token
@@ -16,6 +16,7 @@ logging.basicConfig(
     filemode="w",
 )
 u_data = []
+create_database()
 @bot.message_handler(commands=['start'])
 def start(message):
     u_id = message.chat.id
@@ -28,6 +29,7 @@ def start(message):
     bot.send_message(u_id, 'Привет, я твой бот помощник использующий ИИ'
                                       ' для поддержания диалога, нахождения ответов на твои '
                                       'вопросы, а также для решение задач которые ты мне кидаешь 😉')
+
 
 @bot.message_handler(commands=['help'])
 def help(message):
@@ -44,13 +46,12 @@ def debug(message):
 @bot.message_handler(commands=['tts'])
 def tts_handler(message):
     bot.send_message(message.chat.id, 'Отправляй следующим сообщение текст, а я его озвучу!')
-    create_table()
     bot.register_next_step_handler(message, proccess_tts)
 
 def proccess_tts(message):
     u_id = message.chat.id
     text = message.text
-
+    MAX_LEN = 50
     if message.content_type != 'text':
         bot.send_message(u_id, 'Пока я умею работать лишь с текстом, можно пожалуйста буквы и слова :)')
         return
@@ -60,9 +61,9 @@ def proccess_tts(message):
     text_symbol = is_tts_symbol_limit(message, text)
     if text_symbol is None:
         return
-    insert_row(u_id, text, text_symbol)
+    insert_tts_row(u_id, text, text_symbol)
 
-    status, content = tts(text)
+    status, content = text_to_speech(text)
 
     if status:
         bot.send_voice(u_id, content)
@@ -106,10 +107,10 @@ def process_stt(message):
     file_id = message.voice.file_id
     file_info = bot.get_file(file_id)
     file = bot.download_file(file_info.file_path)
-    status, text = stt(file)
+    status, text = speech_to_text(file)
 
     if status:
-        insert_row(u_id, text, 'stt_blocks', stt_blocks)
+        insert_stt_row(u_id, text, 'stt_blocks', stt_blocks)
         bot.send_message(u_id, text, reply_to_message_id=message.id)
     else:
         bot.send_message(u_id, text)
@@ -118,7 +119,7 @@ def is_stt_block_limit(message, duration):
     user_id = message.from_user.id
     audio_blocks = math.ceil(duration / 15)
 
-    all_blocks = count_all_blocks(user_id)
+    all_blocks = count_all_limits(user_id)
 
     if all_blocks is None:
         all_blocks = 0

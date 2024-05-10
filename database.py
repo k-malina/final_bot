@@ -43,6 +43,26 @@ def add_message(user_id, full_message):
         logging.error(e)
         return None
 
+def insert_tts_row(user_id, message, tts_symbols, db_name="messages.db"):
+    try:
+        with sqlite3.connect(db_name) as conn:
+            cursor = conn.cursor()
+            cursor.execute('''INSERT INTO messages (user_id, message, tts_symbols)VALUES (?, ?, ?)''',
+                           (user_id, message, tts_symbols))
+            conn.commit()
+    except Exception as e:
+        print(f"Error: {e}")
+
+def insert_stt_row(user_id, message, stt_blocks, db_name="messages.db"):
+    try:
+        with sqlite3.connect(db_name) as conn:
+            cursor = conn.cursor()
+            cursor.execute('''INSERT INTO messages (user_id, message, stt_blocks)VALUES (?, ?, ?)''',
+                           (user_id, message, stt_blocks))
+            conn.commit()
+    except Exception as e:
+        print(f"Error: {e}")
+
 def count_users(user_id):
     try:
         with sqlite3.connect(path_to_db) as conn:
